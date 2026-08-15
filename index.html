@@ -271,9 +271,9 @@
     }
   })();
 
-  function logResponse() {
+  function saveResponse(boy, girl) {
     if (!supabaseClient) return;
-    supabaseClient.from('responses').insert({ answer: 'yes' })
+    supabaseClient.from('responses').insert({ answer: 'yes', boy_name: boy, girl_name: girl })
       .then(({ error }) => { if (error) console.error(error); });
   }
 
@@ -351,7 +351,6 @@
   });
 
   yesBtn.addEventListener('click', () => {
-    logResponse();
     namePopup.classList.add('show');
     boyNameInput.focus();
   });
@@ -362,6 +361,7 @@
     const girl = girlNameInput.value.trim();
     const days = daysSinceStart();
     dDayText.textContent = `${boy} ♥ ${girl}, 사귄 지 오늘로 ${days}일째예요!`;
+    saveResponse(boy, girl);
     namePopup.classList.remove('show');
     popup.classList.add('show');
   });
