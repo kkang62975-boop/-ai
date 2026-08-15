@@ -195,10 +195,32 @@
     </div>
   </div>
 
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <script>
   const noBtn = document.getElementById('noBtn');
   const yesBtn = document.getElementById('yesBtn');
   const popup = document.getElementById('popup');
+
+  // Supabase: /api/config(Vercel 서버리스 함수)에서 URL/anon key를 받아 초기화.
+  // 값은 저장소에 하드코딩하지 않고 Vercel 환경변수(SUPABASE_URL, SUPABASE_ANON_KEY)로만 관리한다.
+  let supabaseClient = null;
+  (async function initSupabase() {
+    try {
+      const res = await fetch('/api/config');
+      const { url, anonKey } = await res.json();
+      if (url && anonKey && window.supabase) {
+        supabaseClient = window.supabase.createClient(url, anonKey);
+      }
+    } catch (err) {
+      console.error('Supabase 초기화 실패', err);
+    }
+  })();
+
+  function logResponse() {
+    if (!supabaseClient) return;
+    supabaseClient.from('responses').insert({ answer: 'yes' })
+      .then(({ error }) => { if (error) console.error(error); });
+  }
 
   const isTouch = ('ontouchstart' in window) || navigator.maxTouchPoints > 0;
   const DODGE_DISTANCE = 110; // 이 거리(px) 안으로 커서가 들어오면 도망
@@ -275,6 +297,7 @@
 
   yesBtn.addEventListener('click', () => {
     popup.classList.add('show');
+    logResponse();
   });
 
   popup.addEventListener('click', () => {
