@@ -153,6 +153,7 @@
     letter-spacing: -0.374px;
     color: var(--ink);
   }
+  .popup-text.sm { font-size: 22px; }
   .popup-hint {
     margin-top: 10px;
     font-family: var(--font-text);
@@ -161,6 +162,35 @@
     letter-spacing: -0.224px;
     color: var(--ink-muted-48);
   }
+  .popup-days {
+    margin-top: 12px;
+    font-family: var(--font-text);
+    font-size: 17px;
+    font-weight: 600;
+    letter-spacing: -0.374px;
+    color: var(--ink);
+  }
+
+  .name-form {
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+    margin-top: var(--sp-lg);
+  }
+  .name-form input {
+    width: 220px;
+    font-family: var(--font-text);
+    font-size: 17px;
+    padding: 11px 18px;
+    border-radius: 9999px;
+    border: 1px solid var(--hairline);
+    outline: none;
+    text-align: center;
+    color: var(--ink);
+    background: var(--canvas);
+  }
+  .name-form input:focus { border-color: var(--primary); }
+  .name-form button { width: 100%; margin-top: 4px; }
 
   @media (max-width: 640px) {
     h1 { font-size: 34px; }
@@ -187,11 +217,22 @@
     <div class="hero-emoji">💋</div>
   </div>
 
+  <div id="namePopup" class="popup-overlay">
+    <div class="popup-box">
+      <div class="popup-emoji">💑</div>
+      <div class="popup-text sm">이름을 알려줘</div>
+      <form id="nameForm" class="name-form">
+        <input id="boyName" type="text" placeholder="남자친구 이름" required maxlength="20" autocomplete="off">
+        <input id="girlName" type="text" placeholder="여자친구 이름" required maxlength="20" autocomplete="off">
+        <button type="submit" class="btn yes">확인</button>
+      </form>
+    </div>
+  </div>
+
   <div id="popup" class="popup-overlay">
     <div class="popup-box">
       <div class="popup-emoji">😘</div>
-      <div class="popup-text">앙!!</div>
-      <div class="popup-hint">역시 그럴 줄 알았어 ❤️</div>
+      <div id="dDayText" class="popup-days"></div>
     </div>
   </div>
 
@@ -200,6 +241,20 @@
   const noBtn = document.getElementById('noBtn');
   const yesBtn = document.getElementById('yesBtn');
   const popup = document.getElementById('popup');
+  const namePopup = document.getElementById('namePopup');
+  const nameForm = document.getElementById('nameForm');
+  const boyNameInput = document.getElementById('boyName');
+  const girlNameInput = document.getElementById('girlName');
+  const dDayText = document.getElementById('dDayText');
+
+  const START_DATE = new Date(2025, 9, 30); // 2025-10-30 (사귀기 시작한 날, 월은 0부터 시작하므로 9 = 10월)
+
+  function daysSinceStart() {
+    const now = new Date();
+    const utcStart = Date.UTC(START_DATE.getFullYear(), START_DATE.getMonth(), START_DATE.getDate());
+    const utcNow = Date.UTC(now.getFullYear(), now.getMonth(), now.getDate());
+    return Math.floor((utcNow - utcStart) / 86400000) + 1; // 시작일을 1일째로 계산
+  }
 
   // Supabase: /api/config(Vercel 서버리스 함수)에서 URL/anon key를 받아 초기화.
   // 값은 저장소에 하드코딩하지 않고 Vercel 환경변수(SUPABASE_URL, SUPABASE_ANON_KEY)로만 관리한다.
@@ -296,8 +351,19 @@
   });
 
   yesBtn.addEventListener('click', () => {
-    popup.classList.add('show');
     logResponse();
+    namePopup.classList.add('show');
+    boyNameInput.focus();
+  });
+
+  nameForm.addEventListener('submit', (e) => {
+    e.preventDefault();
+    const boy = boyNameInput.value.trim();
+    const girl = girlNameInput.value.trim();
+    const days = daysSinceStart();
+    dDayText.textContent = `${boy} ♥ ${girl}, 사귄 지 오늘로 ${days}일째예요!`;
+    namePopup.classList.remove('show');
+    popup.classList.add('show');
   });
 
   popup.addEventListener('click', () => {
