@@ -1,0 +1,286 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no">
+<title>나랑 뽀뽀할래?</title>
+<style>
+  :root {
+    /* Apple design system — colors */
+    --primary: #0066cc;
+    --primary-focus: #0071e3;
+    --ink: #1d1d1f;
+    --ink-muted-48: #7a7a7a;
+    --canvas: #ffffff;
+    --canvas-parchment: #f5f5f7;
+    --hairline: #e0e0e0;
+
+    /* Apple design system — fonts (SF Pro on Apple devices, sensible fallbacks elsewhere) */
+    --font-display: "SF Pro Display", "Apple SD Gothic Neo", system-ui, -apple-system, BlinkMacSystemFont, "Malgun Gothic", sans-serif;
+    --font-text: "SF Pro Text", "Apple SD Gothic Neo", system-ui, -apple-system, BlinkMacSystemFont, "Malgun Gothic", sans-serif;
+
+    /* Apple design system — spacing (8px base) */
+    --sp-lg: 24px;
+    --sp-xl: 32px;
+    --sp-section: 80px;
+  }
+  * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
+  html, body {
+    height: 100%;
+    margin: 0;
+    overflow: hidden; /* 버튼이 뷰포트 밖으로 스크롤을 만들지 않도록 */
+  }
+  body {
+    background: var(--canvas-parchment); /* 단일 평면 캔버스, 그라디언트 없음 */
+    font-family: var(--font-text);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    position: relative;
+    -webkit-user-select: none;
+    user-select: none;
+    touch-action: manipulation;
+  }
+
+  /* 전체 페이지 자체가 하나의 product-tile-light: 카드 테두리·그림자 없이 캔버스 위에 바로 놓인다 */
+  .tile {
+    width: 100%;
+    max-width: 560px;
+    padding: var(--sp-section) var(--sp-xl);
+    text-align: center;
+  }
+
+  h1 {
+    margin: 0 0 var(--sp-lg);
+    font-family: var(--font-display);
+    font-size: 40px;
+    font-weight: 600;
+    line-height: 1.1;
+    letter-spacing: 0;
+    color: var(--ink);
+  }
+
+  p.sub {
+    margin: 0 0 var(--sp-xl);
+    font-family: var(--font-text);
+    font-size: 24px;
+    font-weight: 300; /* Apple의 "airy" 라이트 웨이트 */
+    line-height: 1.5;
+    color: var(--ink-muted-48);
+  }
+
+  .button-row {
+    display: flex;
+    gap: 12px;
+    justify-content: center;
+    flex-wrap: wrap;
+    margin-bottom: var(--sp-section);
+  }
+
+  .btn {
+    font-family: var(--font-text);
+    font-size: 17px;
+    font-weight: 400;
+    line-height: 1.47;
+    letter-spacing: -0.374px;
+    padding: 11px 22px;
+    border-radius: 9999px; /* rounded.pill — 시그니처 Apple 필 */
+    border: none;
+    cursor: pointer;
+    white-space: nowrap;
+    transition: transform .1s ease, left 1.8s cubic-bezier(.22,.61,.36,1), top 1.8s cubic-bezier(.22,.61,.36,1);
+  }
+  .btn:active { transform: scale(0.95); } /* 시스템 전역 프레스 인터랙션 */
+  .btn:focus-visible { outline: 2px solid var(--primary-focus); outline-offset: 2px; }
+
+  /* button-primary */
+  .btn.yes {
+    background: var(--primary);
+    color: #ffffff;
+  }
+
+  /* button-secondary-pill (ghost) */
+  .btn.no {
+    background: transparent;
+    color: var(--primary);
+    border: 1px solid var(--primary);
+  }
+
+  /* "제품 이미지"로 취급되는 유일한 장식 요소 — 시스템 내 유일한 그림자를 여기에만 적용 */
+  .hero-emoji {
+    font-size: 64px;
+    filter: drop-shadow(3px 5px 14px rgba(0, 0, 0, 0.22));
+  }
+
+  /* 팝업: sub-nav-frosted 스타일의 프로스티드 글래스 배경 */
+  .popup-overlay {
+    position: fixed;
+    inset: 0;
+    background: rgba(245, 245, 247, 0.8);
+    backdrop-filter: saturate(180%) blur(20px);
+    -webkit-backdrop-filter: saturate(180%) blur(20px);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    z-index: 10;
+    opacity: 0;
+    pointer-events: none;
+    transition: opacity .25s ease;
+  }
+  .popup-overlay.show {
+    opacity: 1;
+    pointer-events: auto;
+  }
+  .popup-box {
+    background: var(--canvas);
+    border-radius: 18px; /* rounded.lg */
+    padding: var(--sp-xl) 48px;
+    text-align: center;
+    transform: scale(.94);
+    transition: transform .25s cubic-bezier(.2,1.6,.4,1);
+  }
+  .popup-overlay.show .popup-box {
+    transform: scale(1);
+  }
+  .popup-emoji {
+    font-size: 56px;
+    margin-bottom: 4px;
+  }
+  .popup-text {
+    font-family: var(--font-display);
+    font-size: 34px;
+    font-weight: 600;
+    letter-spacing: -0.374px;
+    color: var(--ink);
+  }
+  .popup-hint {
+    margin-top: 10px;
+    font-family: var(--font-text);
+    font-size: 14px;
+    font-weight: 400;
+    letter-spacing: -0.224px;
+    color: var(--ink-muted-48);
+  }
+
+  @media (max-width: 640px) {
+    h1 { font-size: 34px; }
+    .tile { padding: 64px var(--sp-lg); }
+    .button-row { margin-bottom: 64px; }
+  }
+  @media (max-width: 419px) {
+    h1 { font-size: 28px; }
+    p.sub { font-size: 20px; }
+    .tile { padding: 48px var(--sp-lg); }
+    .button-row { margin-bottom: 48px; }
+  }
+</style>
+</head>
+<body>
+
+  <div class="tile">
+    <h1>나랑 뽀뽀할래?</h1>
+    <p class="sub">둘 중 하나만 골라줘</p>
+    <div class="button-row">
+      <button id="yesBtn" class="btn yes" type="button">좋아!! 💕</button>
+      <button id="noBtn" class="btn no" type="button">싫어!!</button>
+    </div>
+    <div class="hero-emoji">💋</div>
+  </div>
+
+  <div id="popup" class="popup-overlay">
+    <div class="popup-box">
+      <div class="popup-emoji">😘</div>
+      <div class="popup-text">앙!!</div>
+      <div class="popup-hint">역시 그럴 줄 알았어 ❤️</div>
+    </div>
+  </div>
+
+<script>
+  const noBtn = document.getElementById('noBtn');
+  const yesBtn = document.getElementById('yesBtn');
+  const popup = document.getElementById('popup');
+
+  const isTouch = ('ontouchstart' in window) || navigator.maxTouchPoints > 0;
+  const DODGE_DISTANCE = 110; // 이 거리(px) 안으로 커서가 들어오면 도망
+  const RUN_DURATION = 1800; // 도망가는 데 걸리는 시간(ms), CSS transition과 맞춰야 함
+
+  let dodging = false;
+  let fleeing = false; // 도망 애니메이션이 진행 중인지 (진행 중엔 다시 트리거 안 함 → 천천히, 매끄럽게)
+
+  function randomPosition() {
+    const rect = noBtn.getBoundingClientRect();
+    const margin = 16;
+    const maxX = Math.max(margin, window.innerWidth - rect.width - margin);
+    const maxY = Math.max(margin, window.innerHeight - rect.height - margin);
+    return {
+      x: margin + Math.random() * (maxX - margin),
+      y: margin + Math.random() * (maxY - margin),
+    };
+  }
+
+  function activateDodge() {
+    if (dodging) return;
+    dodging = true;
+    const rect = noBtn.getBoundingClientRect();
+    noBtn.style.position = 'fixed';
+    noBtn.style.left = rect.left + 'px';
+    noBtn.style.top = rect.top + 'px';
+    noBtn.style.margin = '0';
+    noBtn.style.zIndex = '5';
+  }
+
+  // force=true면 진행 중인 애니메이션을 무시하고 즉시 다시 도망 (클릭/터치 안전장치용)
+  function runAway(force) {
+    if (fleeing && !force) return;
+    activateDodge();
+    fleeing = true;
+    const pos = randomPosition();
+    noBtn.style.left = pos.x + 'px';
+    noBtn.style.top = pos.y + 'px';
+    setTimeout(() => { fleeing = false; }, RUN_DURATION);
+  }
+
+  if (!isTouch) {
+    // 데스크탑: 마우스가 가까이 오면 천천히 도망 (애니메이션 중엔 재트리거하지 않음)
+    document.addEventListener('mousemove', (e) => {
+      const rect = noBtn.getBoundingClientRect();
+      const cx = rect.left + rect.width / 2;
+      const cy = rect.top + rect.height / 2;
+      const dist = Math.hypot(e.clientX - cx, e.clientY - cy);
+      if (dist < DODGE_DISTANCE) {
+        runAway();
+      }
+    });
+  } else {
+    // 모바일: 터치하는 순간 천천히 도망 시작
+    noBtn.addEventListener('touchstart', (e) => {
+      e.preventDefault();
+      runAway(true);
+    }, { passive: false });
+  }
+
+  // 만약을 대비한 안전장치: 어떻게든 클릭/포커스로 트리거되면 그냥 다시 도망 (즉시 강제)
+  noBtn.addEventListener('click', (e) => {
+    e.preventDefault();
+    runAway(true);
+  });
+  noBtn.tabIndex = -1;
+
+  window.addEventListener('resize', () => {
+    if (!dodging) return;
+    const pos = randomPosition();
+    noBtn.style.left = pos.x + 'px';
+    noBtn.style.top = pos.y + 'px';
+  });
+
+  yesBtn.addEventListener('click', () => {
+    popup.classList.add('show');
+  });
+
+  popup.addEventListener('click', () => {
+    popup.classList.remove('show');
+  });
+</script>
+
+</body>
+</html>
